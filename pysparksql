@@ -1,0 +1,24 @@
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, year, sum as _sum
+
+spark = SparkSession.builder.appName("DesafioFinalSpark").getOrCreate()
+
+caminho_arquivo = "vendas.csv"
+
+df_vendas = spark.read.csv(caminho_arquivo, header=True, inferSchema=True)
+
+print("📄 Dados de vendas:")
+df_vendas.show()
+
+print("🧍‍♂️ Clientes com maior valor de compra (compra única):")
+df_vendas.orderBy(col("valor_compra").desc()).show(5)
+
+df_vendas_com_ano = df_vendas.withColumn("ano", year(col("data_compra")))
+
+vendas_por_ano = df_vendas_com_ano.groupBy("ano").agg(
+    _sum("valor_compra").alias("total_vendas")
+)
+print("Total de vendas por ano:")
+vendas_por_ano.orderBy("ano").show()
+
+vendas_por_ano.write.csv("saida_vendas_anuais", header=True, mode="overwrite")
